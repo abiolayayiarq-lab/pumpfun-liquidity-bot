@@ -67,7 +67,6 @@ def calc_liq(tx):
 
             pre_match = next((x for x in pre if x["mint"] == mint and x["owner"] == p["owner"]), None)
             pre_amt = float(pre_match["uiTokenAmount"]["uiAmount"] or 0) if pre_match else 0
-
             delta = post_amt - pre_amt
 
             if mint == "So11111111111111111111111111111111111111112":
@@ -239,4 +238,4 @@ https://solscan.io/tx/{sig}
 
 
 if __name__ == "__main__":
-    monitor()
+    main()
