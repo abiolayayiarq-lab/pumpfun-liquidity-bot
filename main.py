@@ -202,6 +202,6 @@ def main():
 
     app.run_polling()
 
-
+print("TOKEN =", TOKEN)
 if __name__ == "__main__":
     main()
