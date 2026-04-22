@@ -3,7 +3,6 @@ import json
 import requests
 import websocket
 import threading
-import asyncio
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
@@ -76,7 +75,6 @@ def calc_liq(tx):
             )
 
             pre_amt = float(pre_match["uiTokenAmount"]["uiAmount"] or 0) if pre_match else 0
-
             delta = post_amt - pre_amt
 
             # SOL mint
@@ -190,7 +188,7 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("⛔ Monitoramento parado")
 
 
-# MAIN (CORRIGIDO PARA PYTHON 3.14)
+# MAIN
 
 def main():
     print("🚀 Iniciando bot...")
@@ -202,10 +200,7 @@ def main():
 
     print("✅ Bot rodando...")
 
-    async def run():
-        await app.run_polling()
-
-    asyncio.run(run())
+    app.run_polling()
 
 
 if __name__ == "__main__":
