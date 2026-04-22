@@ -3,6 +3,8 @@ import json
 import requests
 import websocket
 import threading
+import asyncio
+
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 
@@ -77,6 +79,7 @@ def calc_liq(tx):
 
             delta = post_amt - pre_amt
 
+            # SOL mint
             if mint == "So11111111111111111111111111111111111111112":
                 total += delta * SOL_PRICE
 
@@ -91,6 +94,7 @@ def start_ws(bot, chat_id):
 
     def on_message(ws, message):
         global running
+
         if not running:
             ws.close()
             return
@@ -127,6 +131,7 @@ Liquidez: ${int(liq)}
 
 https://solscan.io/tx/{sig}
 """
+
         bot.send_message(chat_id=chat_id, text=msg)
 
     def on_open(ws):
@@ -185,6 +190,8 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("⛔ Monitoramento parado")
 
 
+# MAIN (CORRIGIDO PARA PYTHON 3.14)
+
 def main():
     print("🚀 Iniciando bot...")
 
@@ -194,7 +201,11 @@ def main():
     app.add_handler(CallbackQueryHandler(button))
 
     print("✅ Bot rodando...")
-    app.run_polling()
+
+    async def run():
+        await app.run_polling()
+
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
