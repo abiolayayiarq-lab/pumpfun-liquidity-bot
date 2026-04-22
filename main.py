@@ -9,6 +9,9 @@ from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandle
 # ENV
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 
+if not TOKEN:
+    raise Exception("TELEGRAM_TOKEN não definido")
+
 # SOLANA
 RPC_WS = "wss://api.mainnet-beta.solana.com"
 RPC_HTTP = "https://api.mainnet-beta.solana.com"
@@ -65,8 +68,13 @@ def calc_liq(tx):
             mint = p["mint"]
             post_amt = float(p["uiTokenAmount"]["uiAmount"] or 0)
 
-            pre_match = next((x for x in pre if x["mint"] == mint and x["owner"] == p["owner"]), None)
+            pre_match = next(
+                (x for x in pre if x["mint"] == mint and x["owner"] == p["owner"]),
+                None
+            )
+
             pre_amt = float(pre_match["uiTokenAmount"]["uiAmount"] or 0) if pre_match else 0
+
             delta = post_amt - pre_amt
 
             if mint == "So11111111111111111111111111111111111111112":
@@ -106,6 +114,8 @@ def start_ws(bot, chat_id):
             return
 
         token = get_token(tx)
+        if not token:
+            return
 
         msg = f"""
 🚀 PUMP.FUN ALERT
@@ -157,8 +167,17 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     chat_id = query.message.chat_id
 
-    if query.data == "start" and not running:
-        threading.Thread(target=start_ws, args=(context.bot, chat_id)).start()
+    if query.data == "start":
+        if running:
+            await query.edit_message_text("⚠️ Já está rodando")
+            return
+
+        threading.Thread(
+            target=start_ws,
+            args=(context.bot, chat_id),
+            daemon=True
+        ).start()
+
         await query.edit_message_text("✅ Monitoramento iniciado")
 
     elif query.data == "stop":
@@ -167,74 +186,15 @@ async def button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def main():
+    print("🚀 Iniciando bot...")
+
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button))
 
-    print("🚀 Bot rodando...")
+    print("✅ Bot rodando...")
     app.run_polling()
-
-
-if __name__ == "__main__":
-    main()            pre_amt = float(pre_match["uiTokenAmount"]["uiAmount"] or 0) if pre_match else 0
-
-            delta = post_amt - pre_amt
-
-            if mint == "So11111111111111111111111111111111111111112":
-                total += delta * SOL_PRICE
-
-        return total
-    except:
-        return 0
-
-
-def monitor():
-    def on_message(ws, message):
-        data = json.loads(message)
-
-        if "params" not in data:
-            return
-
-        sig = data["params"]["result"]["value"]["signature"]
-        tx = get_tx(sig)
-
-        if not tx:
-            return
-
-        liq = calc_liq(tx)
-        if liq < MIN_LIQ:
-            return
-
-        if not is_pump(tx):
-            return
-
-        token = get_token(tx)
-
-        msg = f"""
-🚀 PUMP FUN ALERT
-
-Token: {token}
-Liquidez: ${int(liq)}
-
-https://solscan.io/tx/{sig}
-"""
-        send(msg)
-
-    def on_open(ws):
-        ws.send(json.dumps({
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "logsSubscribe",
-            "params": [
-                {"mentions": [RAYDIUM_PROGRAM]},
-                {"commitment": "confirmed"}
-            ]
-        }))
-
-    ws = websocket.WebSocketApp(RPC_WS, on_message=on_message)
-    ws.on_open = on_open
-    ws.run_forever()
 
 
 if __name__ == "__main__":
